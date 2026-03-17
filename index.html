@@ -94,6 +94,9 @@
             position: relative;
             margin: 0 auto;
             width: fit-content;
+            touch-action: none; /* 防止浏览器默认触摸行为 */
+            user-select: none; /* 防止文本选择 */
+            -webkit-user-select: none;
         }
 
         .game-grid {
@@ -476,6 +479,7 @@
             }
 
             setupEventListeners() {
+                // 键盘控制
                 document.addEventListener('keydown', (e) => {
                     if (e.key === 'ArrowUp') {
                         e.preventDefault();
@@ -492,6 +496,42 @@
                     }
                 });
 
+                // 触摸滑动控制
+                const gameContainer = document.querySelector('.game-container');
+                let touchStartX = 0;
+                let touchStartY = 0;
+                let touchEndX = 0;
+                let touchEndY = 0;
+
+                gameContainer.addEventListener('touchstart', (e) => {
+                    touchStartX = e.changedTouches[0].screenX;
+                    touchStartY = e.changedTouches[0].screenY;
+                }, { passive: true });
+
+                gameContainer.addEventListener('touchend', (e) => {
+                    touchEndX = e.changedTouches[0].screenX;
+                    touchEndY = e.changedTouches[0].screenY;
+                    this.handleSwipe(touchStartX, touchStartY, touchEndX, touchEndY);
+                }, { passive: true });
+
+                // 鼠标拖拽控制（用于电脑测试）
+                let mouseDown = false;
+                let mouseStartX = 0;
+                let mouseStartY = 0;
+
+                gameContainer.addEventListener('mousedown', (e) => {
+                    mouseDown = true;
+                    mouseStartX = e.screenX;
+                    mouseStartY = e.screenY;
+                });
+
+                gameContainer.addEventListener('mouseup', (e) => {
+                    if (mouseDown) {
+                        mouseDown = false;
+                        this.handleSwipe(mouseStartX, mouseStartY, e.screenX, e.screenY);
+                    }
+                });
+
                 document.getElementById('new-game-btn').addEventListener('click', () => {
                     this.hideMessage();
                     this.init();
@@ -501,6 +541,32 @@
                     this.hideMessage();
                     this.init();
                 });
+            }
+
+            handleSwipe(startX, startY, endX, endY) {
+                const diffX = endX - startX;
+                const diffY = endY - startY;
+                const minSwipeDistance = 30; // 最小滑动距离
+
+                if (Math.abs(diffX) < minSwipeDistance && Math.abs(diffY) < minSwipeDistance) {
+                    return; // 滑动距离太短，忽略
+                }
+
+                if (Math.abs(diffX) > Math.abs(diffY)) {
+                    // 水平滑动
+                    if (diffX > 0) {
+                        this.move('right');
+                    } else {
+                        this.move('left');
+                    }
+                } else {
+                    // 垂直滑动
+                    if (diffY > 0) {
+                        this.move('down');
+                    } else {
+                        this.move('up');
+                    }
+                }
             }
         }
 
